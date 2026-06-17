@@ -33,17 +33,22 @@ def extrair_id_do_link(url: str) -> str | None:
     if not url:
         return None
 
-    # Prioridade 1 — item_id no parâmetro pdp_filters
+    # Prioridade 1 — wid= na query string (formato de busca do ML)
+    match = re.search(r'wid=(MLB\d+)', url)
+    if match:
+        return match.group(1)
+
+    # Prioridade 2 — item_id no parâmetro pdp_filters
     match = re.search(r'item_id[%3A:]+MLB(\d+)', url)
     if match:
         return f"MLB{match.group(1)}"
 
-    # Prioridade 2 — item_id direto na query string
+    # Prioridade 3 — item_id direto na query string
     match = re.search(r'item_id=MLB(\d+)', url)
     if match:
         return f"MLB{match.group(1)}"
 
-    # Prioridade 3 — MLB com hífen no path (formato clássico)
+    # Prioridade 4 — MLB com hífen no path (formato clássico)
     match = re.search(r'MLB-(\d+)', url)
     if match:
         return f"MLB{match.group(1)}"
