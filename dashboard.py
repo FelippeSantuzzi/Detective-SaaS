@@ -20,11 +20,9 @@ import pandas as pd
 from datetime import datetime
 import re
 
-from historico import carregar_historico, resumo_historico
+from historico import salvar_historico, carregar_historico, resumo_historico
 from alertas   import verificar_alertas
-
-# ⚠️ MODO CLOUD — coleta roda localmente via main.py ou agendador.py
-MODO_CLOUD = True
+from api_ml    import coletar_por_link
 
 
 # ─────────────────────────────────────────────────────────────
@@ -143,10 +141,7 @@ with st.sidebar:
     # Imagem dinâmica — puxada do último registro do histórico
     img_url = dados_atuais.get("imagem", "") if dados_atuais else ""
     if img_url and img_url.startswith("http"):
-        try:
-            st.image(img_url, width=200)
-        except:
-            st.markdown("🖼️")
+        st.image(img_url, width=200)
 
     st.markdown("### ⚙️ Controles")
 
@@ -160,8 +155,19 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Coleta roda localmente — dashboard só exibe dados
-    st.info("💡 Para coletar dados, rode `python main.py` na sua máquina.")
+    # Botão de atualização manual
+    if st.button("🔄 Atualizar agora", use_container_width=True, type="primary"):
+        if link_anuncio:
+            with st.spinner("🕵️ DETECTIVE em ação..."):
+                dados = coletar_por_link(link_anuncio)
+                if dados:
+                    salvar_historico(dados)
+                    st.success("✅ Dados atualizados!")
+                    st.rerun()
+                else:
+                    st.error("❌ Falha na coleta.")
+        else:
+            st.warning("Cole um link primeiro.")
 
     st.markdown("---")
     st.markdown("### 📊 Resumo")
@@ -185,14 +191,7 @@ with st.sidebar:
 
 col_logo, col_titulo = st.columns([1, 5])
 with col_logo:
-    import os as _os
-    if _os.path.exists("detective_logo.png"):
-        try:
-            st.image("detective_logo.png", width=200)
-        except:
-            st.markdown("## 🕵️")
-    else:
-        st.markdown("## 🕵️")
+    st.image("detective_logo.png", width=200)
 with col_titulo:
     st.markdown("""
     <div class="detective-header">
@@ -209,7 +208,33 @@ with col_titulo:
 # ─────────────────────────────────────────────────────────────
 
 st.markdown("### 🎯 Monitorar Concorrente")
-st.info("🖥️ A coleta de dados roda localmente. Rode `python main.py` na sua máquina para atualizar os dados aqui.")
+
+col_input, col_btn = st.columns([4, 1])
+
+with col_input:
+    link_novo = st.text_input(
+        label="Cole o link do anúncio do Mercado Livre:",
+        placeholder="https://www.mercadolivre.com.br/...",
+        label_visibility="collapsed",
+    )
+
+with col_btn:
+    monitorar = st.button("🔍 Monitorar", use_container_width=True, type="primary")
+
+if monitorar:
+    if not link_novo or not link_novo.startswith("http"):
+        st.error("❌ Cole um link válido do Mercado Livre.")
+    else:
+        with st.spinner("🔍 DETECTIVE consultando API do Mercado Livre..."):
+            dados = coletar_por_link(link_novo)
+
+        if dados:
+            salvar_historico(dados)
+            st.success(f"✅ Dados coletados! {dados.get('titulo', '')} — R$ {dados.get('preco', '')}")
+            st.rerun()
+        else:
+            st.error("❌ Não foi possível encontrar esse anúncio. Verifique o link e tente novamente.")
+
 st.markdown("---")
 
 
