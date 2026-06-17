@@ -209,4 +209,4 @@ if __name__ == "__main__":
         for k, v in dados.items():
             print(f"  {k}: {v}")
     else:
-        print("❌ Falha na coleta.")
+        print("❌ Falha na coleta.")# rebuild
