@@ -191,7 +191,14 @@ with st.sidebar:
 
 col_logo, col_titulo = st.columns([1, 5])
 with col_logo:
-    st.image("detective_logo.png", width=200)
+    import os as _os
+    if _os.path.exists("detective_logo.png"):
+        try:
+            st.image("detective_logo.png", width=200)
+        except:
+            st.markdown("## 🕵️")
+    else:
+        st.markdown("## 🕵️")
 with col_titulo:
     st.markdown("""
     <div class="detective-header">
